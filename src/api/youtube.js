@@ -229,28 +229,3 @@ export async function getPopularVideos(options = {}) {
   return response.json()
 }
 
-export async function getRelatedVideos(videoId, options = {}) {
-  if (shouldUseDummy) {
-    return { items: DUMMY_VIDEOS.filter((video) => video.id.videoId !== videoId) }
-  }
-
-  const params = new URLSearchParams({
-    key: API_KEY || '',
-    part: 'snippet',
-    type: 'video',
-    relatedToVideoId: videoId,
-    maxResults: '12',
-    ...options,
-  })
-
-  const response = await fetch(`${API_BASE_URL}/search?${params}`)
-  if (!response.ok) {
-    if (await isQuotaExceeded(response)) {
-      return { items: DUMMY_VIDEOS.filter((video) => video.id.videoId !== videoId) }
-    }
-    const errorBody = await response.text()
-    throw new Error(`YouTube related failed: ${response.status} ${errorBody}`)
-  }
-
-  return response.json()
-}

@@ -147,6 +147,12 @@ body {
 	align-items: center;
 }
 
+.search-input-wrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
 .navbar-search input {
 	width: min(520px, 60vw);
 	min-width: 260px;
@@ -156,6 +162,38 @@ body {
 	font-size: 16px;
 	background: rgba(12, 13, 18, 0.85);
 	color: var(--ink);
+}
+
+
+.suggestion-box {
+	position: absolute;
+	top: calc(100% + 8px);
+	left: 0;
+	right: 0;
+	background: rgba(12, 13, 18, 0.95);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 16px;
+	box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+	padding: 6px;
+	z-index: 20;
+	backdrop-filter: blur(14px);
+}
+
+.suggestion-item {
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: none;
+	color: var(--ink);
+	padding: 10px 12px;
+	border-radius: 12px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.suggestion-item:hover,
+.suggestion-item.is-active {
+	background: rgba(98, 210, 255, 0.16);
 }
 
 .navbar-search button {

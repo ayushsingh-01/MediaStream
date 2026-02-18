@@ -1,36 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { getPopularVideos, searchVideos } from '../api/youtube'
+import { searchVideos } from '../api/youtube'
 import Pagination from '../components/Pagination'
 
 const DEFAULT_QUERY = ''
-const POPULAR_REGIONS = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'IN', 'JP', 'KR', 'BR']
 
-const shuffleVideos = (items) => {
-  const list = [...items]
-  for (let i = list.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[list[i], list[j]] = [list[j], list[i]]
-  }
-  return list
-}
-
-export default function Home() {
+export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [regionFallback] = useState(
-    () => POPULAR_REGIONS[Math.floor(Math.random() * POPULAR_REGIONS.length)],
-  )
-  const query = searchParams.get('q') || DEFAULT_QUERY
-  const pageToken = searchParams.get('pageToken') || ''
-  const currentPage = Number(searchParams.get('page') || '1')
-  const region = searchParams.get('region') || regionFallback
+  const initialQuery = searchParams.get('q') || DEFAULT_QUERY
+  const initialPageToken = searchParams.get('pageToken') || ''
+  const initialPage = Number(searchParams.get('page') || '1')
   const [videos, setVideos] = useState([])
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
   const [nextPageToken, setNextPageToken] = useState('')
   const [prevPageToken, setPrevPageToken] = useState('')
+  const query = initialQuery
+  const pageToken = initialPageToken
+  const currentPage = Number.isNaN(initialPage) ? 1 : initialPage
 
-  const updateSearchParams = ({ nextQuery, nextPageToken, nextPage, nextRegion }) => {
+  const updateSearchParams = ({ nextQuery, nextPageToken, nextPage }) => {
     const params = new URLSearchParams()
     if (nextQuery) {
       params.set('q', nextQuery)
@@ -41,9 +30,6 @@ export default function Home() {
     if (nextPage && nextPage > 1) {
       params.set('page', String(nextPage))
     }
-    if (!nextQuery && nextRegion) {
-      params.set('region', nextRegion)
-    }
     setSearchParams(params)
   }
 
@@ -51,32 +37,23 @@ export default function Home() {
     let isActive = true
 
     const loadVideos = async () => {
+      const trimmedQuery = query.trim()
+      if (!trimmedQuery) {
+        setVideos([])
+        setStatus('idle')
+        setError('')
+        return
+      }
+
       setStatus('loading')
       setError('')
 
       try {
-        const trimmedQuery = query.trim()
-        const activeRegion = trimmedQuery.length > 0 ? null : region
-        const data = trimmedQuery.length > 0
-          ? await searchVideos(trimmedQuery, { pageToken, maxResults: '12' })
-          : await getPopularVideos({
-              regionCode: activeRegion,
-              pageToken,
-            })
+        const data = await searchVideos(trimmedQuery, { pageToken, maxResults: '12' })
         if (!isActive) return
-        const items = data.items || []
-        const resolvedItems = trimmedQuery.length > 0 || pageToken ? items : shuffleVideos(items)
-        setVideos(resolvedItems)
+        setVideos(data.items || [])
         setNextPageToken(data.nextPageToken || '')
         setPrevPageToken(data.prevPageToken || '')
-        if (!trimmedQuery && activeRegion) {
-          updateSearchParams({
-            nextQuery: '',
-            nextPageToken: pageToken,
-            nextPage: currentPage,
-            nextRegion: activeRegion,
-          })
-        }
         setStatus('ready')
       } catch (err) {
         if (!isActive) return
@@ -90,15 +67,16 @@ export default function Home() {
     return () => {
       isActive = false
     }
-  }, [query, pageToken, region, currentPage])
+  }, [query, pageToken])
 
   return (
     <div className="home-page">
       <header className="home-header">
-        <h1>MediaStream</h1>
-        <p>Explore YouTube videos directly in MediaStream.</p>
+        <h1>Search Results</h1>
+        <p>Find videos across YouTube.</p>
       </header>
 
+      {status === 'idle' && <p>Type a search to see results.</p>}
       {status === 'loading' && (
         <section className="video-grid shimmer-grid" aria-label="Loading videos">
           {Array.from({ length: 8 }).map((_, index) => (
@@ -120,7 +98,7 @@ export default function Home() {
               const snippet = video.snippet || {}
               const thumbnail = snippet.thumbnails?.medium?.url
               return (
-                <Link className="video-card" to={`/watch/${videoId}`} key={videoId || `video-${index}`}>
+                <Link className="video-card" to={`/watch/${videoId}`} key={videoId || `search-${index}`}>
                   {thumbnail && (
                     <img
                       src={thumbnail}
@@ -147,7 +125,6 @@ export default function Home() {
                 nextQuery: query.trim(),
                 nextPageToken: prevPageToken,
                 nextPage,
-                nextRegion: region,
               })
             }}
             onNext={() => {
@@ -156,7 +133,6 @@ export default function Home() {
                 nextQuery: query.trim(),
                 nextPageToken: nextPageToken,
                 nextPage,
-                nextRegion: region,
               })
             }}
           />

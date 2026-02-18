@@ -2,6 +2,7 @@ import './App.css'
 import Layout from './components/Layout'
 import { Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
+import SearchResults from './pages/SearchResults'
 import Watch from './pages/Watch'
 import WatchHistory from './pages/WatchHistory'
 import Upload from './pages/Upload'
@@ -14,6 +15,7 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/search" element={<SearchResults />} />
           <Route path="/watch/featured" element={<WatchHistory />} />
           <Route path="/watch/:id" element={<Watch />} />
           <Route path="/upload" element={<Upload />} />

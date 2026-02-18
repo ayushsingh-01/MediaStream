@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getChannelUploads, getVideoDetails } from '../api/youtube'
 import { upsertHistory } from '../utils/watchHistory'
@@ -45,7 +45,7 @@ export default function Watch() {
             const recData = await getChannelUploads(channelId, { maxResults: '12' })
             if (!isActive) return
             applyRecommendations(recData.items, id)
-          } catch (recError) {
+          } catch {
             if (!isActive) return
             setRecommended([])
           }
