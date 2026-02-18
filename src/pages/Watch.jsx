@@ -36,11 +36,19 @@ export default function Watch() {
 
         const channelId = currentVideo?.snippet?.channelId
 
+        const applyRecommendations = (items, excludeId) => {
+          setRecommended((items || []).filter((item) => item.id?.videoId && item.id.videoId !== excludeId))
+        }
+
         if (channelId) {
-          const recData = await getChannelUploads(channelId, { maxResults: '12' })
-          if (!isActive) return
-          const items = recData.items || []
-          setRecommended(items.filter((item) => item.id?.videoId && item.id.videoId !== id))
+          try {
+            const recData = await getChannelUploads(channelId, { maxResults: '12' })
+            if (!isActive) return
+            applyRecommendations(recData.items, id)
+          } catch (recError) {
+            if (!isActive) return
+            setRecommended([])
+          }
         } else {
           setRecommended([])
         }

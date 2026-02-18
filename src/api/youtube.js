@@ -108,6 +108,19 @@ const getDummyDetails = (videoId) => {
   return DUMMY_DETAILS.find((video) => video.id === videoId) || DUMMY_DETAILS[0]
 }
 
+const isQuotaExceeded = async (response) => {
+  if (!response || response.ok) {
+    return false
+  }
+
+  try {
+    const errorBody = await response.clone().json()
+    return errorBody?.error?.errors?.some((err) => err?.reason === 'quotaExceeded')
+  } catch (error) {
+    return false
+  }
+}
+
 if (!API_KEY) {
   // Surface a clear error early if the API key is missing.
   // eslint-disable-next-line no-console
@@ -130,6 +143,9 @@ export async function searchVideos(query, options = {}) {
 
   const response = await fetch(`${API_BASE_URL}/search?${params}`)
   if (!response.ok) {
+    if (await isQuotaExceeded(response)) {
+      return { items: getDummyList(query) }
+    }
     const errorBody = await response.text()
     throw new Error(`YouTube search failed: ${response.status} ${errorBody}`)
   }
@@ -155,6 +171,9 @@ export async function getChannelUploads(channelId, options = {}) {
 
   const response = await fetch(`${API_BASE_URL}/search?${params}`)
   if (!response.ok) {
+    if (await isQuotaExceeded(response)) {
+      return { items: DUMMY_VIDEOS }
+    }
     const errorBody = await response.text()
     throw new Error(`YouTube channel uploads failed: ${response.status} ${errorBody}`)
   }
@@ -175,6 +194,9 @@ export async function getVideoDetails(videoId) {
 
   const response = await fetch(`${API_BASE_URL}/videos?${params}`)
   if (!response.ok) {
+    if (await isQuotaExceeded(response)) {
+      return { items: [getDummyDetails(videoId)] }
+    }
     const errorBody = await response.text()
     throw new Error(`YouTube details failed: ${response.status} ${errorBody}`)
   }
@@ -197,6 +219,9 @@ export async function getPopularVideos(options = {}) {
 
   const response = await fetch(`${API_BASE_URL}/videos?${params}`)
   if (!response.ok) {
+    if (await isQuotaExceeded(response)) {
+      return { items: DUMMY_VIDEOS }
+    }
     const errorBody = await response.text()
     throw new Error(`YouTube popular failed: ${response.status} ${errorBody}`)
   }
@@ -220,6 +245,9 @@ export async function getRelatedVideos(videoId, options = {}) {
 
   const response = await fetch(`${API_BASE_URL}/search?${params}`)
   if (!response.ok) {
+    if (await isQuotaExceeded(response)) {
+      return { items: DUMMY_VIDEOS.filter((video) => video.id.videoId !== videoId) }
+    }
     const errorBody = await response.text()
     throw new Error(`YouTube related failed: ${response.status} ${errorBody}`)
   }
