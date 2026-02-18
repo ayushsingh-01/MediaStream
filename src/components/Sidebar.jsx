@@ -13,7 +13,7 @@ const navItems = [
   },
   {
     to: '/watch/featured',
-    label: 'Watch',
+    label: 'Watch History',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 7.5c0-1.4 1.1-2.5 2.5-2.5h13c1.4 0 2.5 1.1 2.5 2.5v9c0 1.4-1.1 2.5-2.5 2.5h-13C4.1 19 3 17.9 3 16.5v-9Zm8.4 2.2v4.6l4.1-2.3-4.1-2.3Z" />

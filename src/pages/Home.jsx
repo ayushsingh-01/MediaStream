@@ -75,7 +75,17 @@ export default function Home() {
         </form>
       </header>
 
-      {status === 'loading' && <p>Loading videos...</p>}
+      {status === 'loading' && (
+        <section className="video-grid shimmer-grid" aria-label="Loading videos">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div className="video-card shimmer-card" key={`shimmer-${index}`}>
+              <div className="shimmer-thumb shimmer-animate" />
+              <div className="shimmer-line shimmer-animate" />
+              <div className="shimmer-line shimmer-animate short" />
+            </div>
+          ))}
+        </section>
+      )}
       {status === 'error' && <p>{error}</p>}
 
       {status === 'ready' && (

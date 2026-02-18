@@ -1,24 +1,49 @@
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { getVideoDetails } from '../api/youtube'
+import { Link, useParams } from 'react-router-dom'
+import { getChannelUploads, getVideoDetails } from '../api/youtube'
+import { upsertHistory } from '../utils/watchHistory'
 
 export default function Watch() {
   const { id } = useParams()
   const [video, setVideo] = useState(null)
+  const [recommended, setRecommended] = useState([])
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
+
+  const isValidVideoId = (value) => /^[a-zA-Z0-9_-]{11}$/.test(value || '')
 
   useEffect(() => {
     let isActive = true
 
     const loadVideo = async () => {
+      if (!isValidVideoId(id)) {
+        setVideo(null)
+        setRecommended([])
+        setStatus('idle')
+        setError('Select a video to watch.')
+        return
+      }
+
       setStatus('loading')
       setError('')
 
       try {
         const data = await getVideoDetails(id)
         if (!isActive) return
-        setVideo(data.items?.[0] || null)
+        const currentVideo = data?.items?.[0] || null
+        setVideo(currentVideo)
+        upsertHistory(currentVideo)
+
+        const channelId = currentVideo?.snippet?.channelId
+
+        if (channelId) {
+          const recData = await getChannelUploads(channelId, { maxResults: '12' })
+          if (!isActive) return
+          const items = recData.items || []
+          setRecommended(items.filter((item) => item.id?.videoId && item.id.videoId !== id))
+        } else {
+          setRecommended([])
+        }
         setStatus('ready')
       } catch (err) {
         if (!isActive) return
@@ -41,8 +66,34 @@ export default function Watch() {
 
   return (
     <div className="watch-page">
-      {status === 'loading' && <p>Loading video...</p>}
+      {status === 'loading' && (
+        <div className="watch-layout shimmer-layout" aria-label="Loading video">
+          <div className="watch-player">
+            <div className="shimmer-player shimmer-animate" />
+            <div className="watch-details shimmer-card">
+              <div className="shimmer-line shimmer-animate" />
+              <div className="shimmer-line shimmer-animate short" />
+              <div className="shimmer-line shimmer-animate" />
+            </div>
+          </div>
+          <aside className="watch-recommended">
+            <h3>More videos</h3>
+            <div className="recommended-list">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div className="recommended-card shimmer-card" key={`rec-shimmer-${index}`}>
+                  <div className="shimmer-thumb shimmer-animate" />
+                  <div>
+                    <div className="shimmer-line shimmer-animate" />
+                    <div className="shimmer-line shimmer-animate short" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+      )}
       {status === 'error' && <p>{error}</p>}
+      {status === 'idle' && error && <p>{error}</p>}
 
       {status === 'ready' && video && (
         <div className="watch-layout">
@@ -71,6 +122,36 @@ export default function Watch() {
               )}
             </div>
           </div>
+
+          <aside className="watch-recommended">
+            <h3>More videos</h3>
+            <div className="recommended-list">
+              {recommended.map((item) => {
+                const snippet = item.snippet || {}
+                const thumbnail = snippet.thumbnails?.medium?.url
+                const videoId = item.id?.videoId
+                return (
+                  <Link
+                    className="recommended-card"
+                    to={`/watch/${videoId}`}
+                    key={videoId}
+                  >
+                    {thumbnail && (
+                      <img
+                        src={thumbnail}
+                        alt={snippet.title}
+                        loading="lazy"
+                      />
+                    )}
+                    <div>
+                      <p>{snippet.title}</p>
+                      <span>{snippet.channelTitle}</span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </aside>
         </div>
       )}
     </div>
